@@ -156,9 +156,9 @@ int main(int argc, char** argv)
         return 0;
     }
     ros::Duration(2.0).sleep();
-    if (!set_relmove(-0.2,0,0)){
-        return 0;
-    }
+    // if (!set_relmove(-0.18,0,0)){
+    //     return 0;
+    // }
     delete nav_client; // 程序结束释放资源
     return 0;
 }

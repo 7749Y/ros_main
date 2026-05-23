@@ -633,20 +633,31 @@ bool StateMachine::store()
 
     arm_controller::move srv;
 
-    // 1. 移动到中转箱上方
+    // 0. 先抬升到足够高度，避免水平移动时磕碰机身
+    const float SAFE_Z = 150.0;
+    srv.request.pose.position.z = SAFE_Z;
+    ROS_INFO("[Store] 步骤0: 抬升到安全高度 (%.0fmm)", SAFE_Z);
+    arm_move_client_.call(srv);
+
+    // 1. 在安全高度移动到中转箱上方
     srv.request.pose.position.x = BOX_X;
     srv.request.pose.position.y = BOX_Y;
+    srv.request.pose.position.z = SAFE_Z;
+    ROS_INFO("[Store] 步骤1: 水平移动到中转箱上方");
+    arm_move_client_.call(srv);
+
+    // 2. 下降到中转箱上方 50mm
     srv.request.pose.position.z = BOX_Z + 50;
-    ROS_INFO("[Store] 步骤1: 移动到中转箱上方");
+    ROS_INFO("[Store] 步骤2: 下降到中转箱上方");
     arm_move_client_.call(srv);
 
-    // 2. 下降到中转箱
+    // 3. 下降到中转箱
     srv.request.pose.position.z = BOX_Z;
-    ROS_INFO("[Store] 步骤2: 下降到中转箱");
+    ROS_INFO("[Store] 步骤3: 下降到中转箱");
     arm_move_client_.call(srv);
 
-    // 3. 关闭吸盘，放下物块
-    ROS_INFO("[Store] 步骤3: 关闭吸盘");
+    // 4. 关闭吸盘，放下物块
+    ROS_INFO("[Store] 步骤4: 关闭吸盘");
     std_srvs::Empty empty_srv;
     if (put_client_.waitForExistence(ros::Duration(1.0))) {
         put_client_.call(empty_srv);
@@ -654,9 +665,9 @@ bool StateMachine::store()
     ros::Duration(0.5).sleep();
     ROS_INFO("[Store] 物块已释放");
 
-    // 4. 抬起到安全高度
-    srv.request.pose.position.z = BOX_Z + 50;
-    ROS_INFO("[Store] 步骤4: 抬起到安全高度");
+    // 5. 抬起到安全高度
+    srv.request.pose.position.z = SAFE_Z;
+    ROS_INFO("[Store] 步骤5: 抬起到安全高度");
     arm_move_client_.call(srv);
 
     ROS_INFO("[Store] √ 物块已放入中转箱");

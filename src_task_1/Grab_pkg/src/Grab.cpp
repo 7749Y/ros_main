@@ -171,17 +171,32 @@ int main(int argc, char** argv)
     // 抬起
     arm_move(cargo_x, cargo_y, tag_z);
 
-    // ===== Step 8: 移至出刀点1，松开货物 =====
-    ROS_INFO("===== Step 9: 移至出刀点1 (107, 115, 42) =====");
-    // 入刀
-    arm_move(107, 115, 52);
-    // 下降到放置点
-    arm_move(107, 115, 42);
-    ros::Duration(1.0).sleep();
-    // 关闭吸盘，松开货物
-    set_pump(false);
-    // 出刀
-    arm_move(107, 115, 52);
+    // ===== Step 8: 放置货物（选择出刀点）=====
+    bool point1_occupied = false;
+    nh.param("placement_point_1_occupied", point1_occupied, false);
+
+    if (!point1_occupied) {
+        // 出刀点1 未被占用 → 使用出刀点1
+        ROS_INFO("===== Step 8: 移至出刀点1 (107, 115, 42) =====");
+        arm_move(107, 115, 92);   // 升至出刀点上方50mm处
+        ros::Duration(1.0).sleep();
+        arm_move(107, 115, 42);   // 缓慢下移至放置点
+        ros::Duration(1.0).sleep();
+        set_pump(false);           // 关闭吸盘，松开货物
+        arm_move(107, 115, 52);   // 出刀
+        // 标记出刀点1 为已占用
+        nh.setParam("placement_point_1_occupied", true);
+        ROS_WARN("出刀点1 已标记为占用");
+    } else {
+        // 出刀点1 已被占用 → 使用出刀点2
+        ROS_INFO("===== Step 8: 出刀点1已被占用，移至出刀点2 (107, 185, 42) =====");
+        arm_move(107, 185, 92);   // 升至出刀点上方50mm处
+        ros::Duration(1.0).sleep();
+        arm_move(107, 185, 42);   // 缓慢下移至放置点
+        ros::Duration(1.0).sleep();
+        set_pump(false);           // 关闭吸盘，松开货物
+        arm_move(107, 185, 52);   // 出刀
+    }
 
     // ===== Step 9: 回到安全点 =====
     ROS_INFO("===== Step 9: 回到安全点 (150, 0, 120) =====");

@@ -37,6 +37,12 @@ bool arm_move(float x, float y, float z)
     }
 }
 
+void safe_retract()
+{
+    ROS_WARN("检测失败，正在收回机械臂至安全点...");
+    arm_move(150, 0, 120);
+}
+
 void set_pump(bool state)
 {
     ROS_INFO("等待抓取服务启动...");
@@ -93,17 +99,20 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    // ===== Step 3: 被动识别定位标签 100 =====
-    ROS_INFO("===== Step 3: 等待AR标签 100 识别... =====");
+    // ===== Step 3: 被动识别定位标签 100 (超时10秒) =====
+    ROS_INFO("===== Step 3: 等待AR标签 100 识别... (超时10秒) =====");
     ar_sub = nh.subscribe("hand_camera/ar_pose_marker", 10, arMarkerCallback);
 
+    ros::Time tag_wait_start = ros::Time::now();
     ros::Rate rate(10);
-    while (ros::ok() && !tag_100_detected) {
+    while (ros::ok() && !tag_100_detected &&
+           (ros::Time::now() - tag_wait_start).toSec() < 10.0) {
         ros::spinOnce();
         rate.sleep();
     }
     if (!tag_100_detected) {
         ROS_ERROR("定位失败：未识别到AR标签 100");
+        safe_retract();
         return -1;
     }
 
@@ -124,6 +133,7 @@ int main(int argc, char** argv)
 
     if (cargo_ids_detected.empty()) {
         ROS_ERROR("识别失败：未检测到任何货物标签 (ID:1~4)");
+        safe_retract();
         return -1;
     }
 
@@ -146,6 +156,7 @@ int main(int argc, char** argv)
         listener.lookupTransform("Base", target_frame, ros::Time(0), transform);
     } catch (tf::TransformException& ex) {
         ROS_ERROR("获取货物标签TF坐标失败: %s", ex.what());
+        safe_retract();
         return -1;
     }
 
@@ -158,6 +169,7 @@ int main(int argc, char** argv)
     ROS_INFO("目标位置(上方40mm): (%.2f, %.2f, %.2f)mm", cargo_x, cargo_y, tag_z);
 
     if (!arm_move(cargo_x, cargo_y, tag_z)) {
+        safe_retract();
         return -1;
     }
 

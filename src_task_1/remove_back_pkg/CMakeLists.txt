@@ -24,3 +24,6 @@ include_directories(
 
 add_executable(re_back_node src/re_back.cpp)
 target_link_libraries(re_back_node ${catkin_LIBRARIES})
+
+add_executable(move_forward_node src/forward.cpp)
+target_link_libraries(move_forward_node ${catkin_LIBRARIES})

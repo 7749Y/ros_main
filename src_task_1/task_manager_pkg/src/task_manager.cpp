@@ -36,7 +36,15 @@ int main(int argc, char** argv)
     ros::NodeHandle nh;
 
     int step = 1;
-    const int total_steps = 9;
+    const int total_steps = 10;
+
+    // ====================================================================
+    // Step 0: 向前微移，防止起步打转
+    // ====================================================================
+    ROS_INFO("===== Step 0/%d: 向前微移 =====", total_steps);
+    if (!run_with_retry("rosrun remove_back_pkg move_forward_node", 0))
+        return -1;
+    ROS_INFO("----- Step 0 完成 -----");
 
     // ====================================================================
     // Step 1: 导航到目标点4
@@ -55,9 +63,9 @@ int main(int argc, char** argv)
     ROS_INFO("----- Step %d 完成 (出刀点1已占用) -----", step++);
 
     // ====================================================================
-    // Step 3: 后退 0.18m（第1次）
+    // Step 3: 后退 0.30m（第1次）
     // ====================================================================
-    ROS_INFO("===== Step %d/%d: 后退0.18m (1/2) =====", step, total_steps);
+    ROS_INFO("===== Step %d/%d: 后退0.30m (1/2) =====", step, total_steps);
     if (!run_with_retry("rosrun remove_back_pkg re_back_node", step))
         return -1;
     ROS_INFO("----- Step %d 完成 -----", step++);
@@ -80,9 +88,9 @@ int main(int argc, char** argv)
     ROS_INFO("----- Step %d 完成 (使用出刀点2) -----", step++);
 
     // ====================================================================
-    // Step 6: 后退 0.18m（第2次）
+    // Step 6: 后退 0.30m（第2次）
     // ====================================================================
-    ROS_INFO("===== Step %d/%d: 后退0.18m (2/2) =====", step, total_steps);
+    ROS_INFO("===== Step %d/%d: 后退0.30m (2/2) =====", step, total_steps);
     if (!run_with_retry("rosrun remove_back_pkg re_back_node", step))
         return -1;
     ROS_INFO("----- Step %d 完成 -----", step++);
